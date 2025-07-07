@@ -343,71 +343,70 @@ def calculate_trees_needed(co2_kg, years=5):
 # =============================================
 @st.cache_resource
 def load_model():
-    try:
-        model = joblib.load('co2_emission_model.pkl')
-        le_fuel = joblib.load('label_encoder_fuel.pkl')
-        le_traffic = joblib.load('label_encoder_traffic.pkl')
-        le_weather = joblib.load('label_encoder_weather.pkl')
-    except:
-        # Generate synthetic data with improved fuel type emissions
-        np.random.seed(42)
-        n_samples = 5000  # Increased sample size
+    model = joblib.load('co2_emission_model.pkl')
+    le_fuel = joblib.load('label_encoder_fuel.pkl')
+    le_traffic = joblib.load('label_encoder_traffic.pkl')
+    le_weather = joblib.load('label_encoder_weather.pkl')
+    # except:
+    #     # Generate synthetic data with improved fuel type emissions
+    #     np.random.seed(42)
+    #     n_samples = 5000  # Increased sample size
         
-        # Emission factors by fuel type (kg CO2 per liter)
-        FUEL_EMISSIONS = {
-            'Diesel': 2.68,
-            'Petrol': 2.31,
-            'CNG': 1.65,    # Lower emissions for CNG
-            'Electric': 0.0  # Zero direct emissions
-        }
+    #     # Emission factors by fuel type (kg CO2 per liter)
+    #     FUEL_EMISSIONS = {
+    #         'Diesel': 2.68,
+    #         'Petrol': 2.31,
+    #         'CNG': 1.65,    # Lower emissions for CNG
+    #         'Electric': 0.0  # Zero direct emissions
+    #     }
         
-        data = {
-            'Route_ID': range(1, n_samples+1),
-            'Distance_km': np.random.uniform(50, 2000, n_samples),
-            'Fuel_Type': np.random.choice(['Diesel', 'Petrol', 'CNG', 'Electric'], n_samples, p=[0.3, 0.3, 0.2, 0.2]),
-            'Fuel_Consumed_Liters': np.random.uniform(10, 500, n_samples),
-            'Avg_Speed_kmph': np.random.uniform(30, 100, n_samples),
-            'Traffic_Level': np.random.choice(['Low', 'Medium', 'High'], n_samples, p=[0.3, 0.5, 0.2]),
-            'Weather_Condition': np.random.choice(['Clear', 'Rainy', 'Foggy'], n_samples, p=[0.6, 0.3, 0.1]),
-            'Cargo_Weight_kg': np.random.uniform(500, 10000, n_samples),
-        }
+    #     data = {
+    #         'Route_ID': range(1, n_samples+1),
+    #         'Distance_km': np.random.uniform(50, 2000, n_samples),
+    #         'Fuel_Type': np.random.choice(['Diesel', 'Petrol', 'CNG', 'Electric'], n_samples, p=[0.3, 0.3, 0.2, 0.2]),
+    #         'Fuel_Consumed_Liters': np.random.uniform(10, 500, n_samples),
+    #         'Avg_Speed_kmph': np.random.uniform(30, 100, n_samples),
+    #         'Traffic_Level': np.random.choice(['Low', 'Medium', 'High'], n_samples, p=[0.3, 0.5, 0.2]),
+    #         'Weather_Condition': np.random.choice(['Clear', 'Rainy', 'Foggy'], n_samples, p=[0.6, 0.3, 0.1]),
+    #         'Cargo_Weight_kg': np.random.uniform(500, 10000, n_samples),
+    #     }
         
-        # Calculate emissions based on fuel type
-        data['CO2_Emission_kg'] = [
-            data['Fuel_Consumed_Liters'][i] * FUEL_EMISSIONS[data['Fuel_Type'][i]] 
-            + data['Distance_km'][i] * data['Cargo_Weight_kg'][i] * AVG_CO2_PER_KM / 1000
-            for i in range(n_samples)
-        ]
+    #     # Calculate emissions based on fuel type
+    #     data['CO2_Emission_kg'] = [
+    #         data['Fuel_Consumed_Liters'][i] * FUEL_EMISSIONS[data['Fuel_Type'][i]] 
+    #         + data['Distance_km'][i] * data['Cargo_Weight_kg'][i] * AVG_CO2_PER_KM / 1000
+    #         for i in range(n_samples)
+    #     ]
         
-        df = pd.DataFrame(data)
-        df.to_csv('carbon_footprint_logistics_2000.csv', index=False)
+    #     df = pd.DataFrame(data)
+    #     df.to_csv('carbon_footprint_logistics_2000.csv', index=False)
         
-        # Label encoding
-        le_fuel = LabelEncoder()
-        le_traffic = LabelEncoder()
-        le_weather = LabelEncoder()
+    #     # Label encoding
+    #     le_fuel = LabelEncoder()
+    #     le_traffic = LabelEncoder()
+    #     le_weather = LabelEncoder()
         
-        df['Fuel_Type'] = le_fuel.fit_transform(df['Fuel_Type'])
-        df['Traffic_Level'] = le_traffic.fit_transform(df['Traffic_Level'])
-        df['Weather_Condition'] = le_weather.fit_transform(df['Weather_Condition'])
+    #     df['Fuel_Type'] = le_fuel.fit_transform(df['Fuel_Type'])
+    #     df['Traffic_Level'] = le_traffic.fit_transform(df['Traffic_Level'])
+    #     df['Weather_Condition'] = le_weather.fit_transform(df['Weather_Condition'])
         
-        # Train improved model
-        X = df.drop(['Route_ID', 'CO2_Emission_kg'], axis=1)
-        y = df['CO2_Emission_kg']
+    #     # Train improved model
+    #     X = df.drop(['Route_ID', 'CO2_Emission_kg'], axis=1)
+    #     y = df['CO2_Emission_kg']
         
-        model = RandomForestRegressor(
-            n_estimators=200,  # Increased number of trees
-            max_depth=12,      # Deeper trees for better accuracy
-            min_samples_split=5,
-            random_state=42
-        )
-        model.fit(X, y)
+    #     model = RandomForestRegressor(
+    #         n_estimators=200,  # Increased number of trees
+    #         max_depth=12,      # Deeper trees for better accuracy
+    #         min_samples_split=5,
+    #         random_state=42
+    #     )
+    #     model.fit(X, y)
         
-        # Save the improved model
-        joblib.dump(model, 'co2_emission_model.pkl')
-        joblib.dump(le_fuel, 'label_encoder_fuel.pkl')
-        joblib.dump(le_traffic, 'label_encoder_traffic.pkl')
-        joblib.dump(le_weather, 'label_encoder_weather.pkl')
+    #     # Save the improved model
+    #     joblib.dump(model, 'co2_emission_model.pkl')
+    #     joblib.dump(le_fuel, 'label_encoder_fuel.pkl')
+    #     joblib.dump(le_traffic, 'label_encoder_traffic.pkl')
+    #     joblib.dump(le_weather, 'label_encoder_weather.pkl')
     
     return model, le_fuel, le_traffic, le_weather
 
